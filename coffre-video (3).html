@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffre vidéo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10151c;
+    --panel:#1a2129;
+    --panel-2:#212a33;
+    --bone:#ece8de;
+    --bone-dim:#a9a79c;
+    --brass:#c89b3c;
+    --brass-dim:#8a6e2e;
+    --teal:#4c7a72;
+    --rust:#b54b3a;
+    --line:#2c3540;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--bone);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:48px 20px;
+    line-height:1.5;
+  }
+  .page{width:100%;max-width:480px;}
+  header{margin-bottom:8px;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:2rem;
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+  }
+  .sub{color:var(--bone-dim);font-size:0.95rem;margin:0 0 24px 0;max-width:44ch;}
+  .howto{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:14px 16px;
+    font-size:0.85rem;
+    color:var(--bone-dim);
+    margin-bottom:28px;
+  }
+  .howto strong{color:var(--bone);font-weight:500;}
+
+  .dial-wrap{display:flex;justify-content:center;margin-bottom:8px;}
+  svg.dial{width:180px;height:180px;overflow:visible;}
+  .dial-face{fill:var(--panel);stroke:var(--line);stroke-width:1.5;}
+  .dial-tick{stroke:var(--bone-dim);stroke-width:1.5;}
+  .dial-tick.major{stroke:var(--brass);stroke-width:2.5;}
+  .dial-needle{
+    stroke:var(--brass);
+    stroke-width:3;
+    stroke-linecap:round;
+    transform-origin:90px 90px;
+    transition:transform 1.1s cubic-bezier(.2,.8,.2,1);
+  }
+  .dial-center-text{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    fill:var(--bone);
+    text-anchor:middle;
+    dominant-baseline:middle;
+    letter-spacing:1px;
+  }
+
+  nav.tabs{
+    display:flex;
+    gap:24px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:24px;
+  }
+  nav.tabs button{
+    background:none;border:none;color:var(--bone-dim);
+    font-family:'Inter',sans-serif;font-size:0.95rem;
+    padding:10px 2px 12px 2px;cursor:pointer;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+  }
+  nav.tabs button.active{color:var(--bone);border-bottom-color:var(--brass);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  label{display:block;font-size:0.9rem;color:var(--bone-dim);margin-bottom:8px;}
+
+  input[type=url], input[type=text].field{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--bone);
+    font-family:'Inter',sans-serif;
+    font-size:0.95rem;
+    padding:12px 14px;
+    border-radius:4px;
+    margin-bottom:16px;
+  }
+  input[type=url]:focus, input[type=text].field:focus{outline:2px solid var(--brass-dim);border-color:var(--brass);}
+
+  textarea{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--bone);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.82rem;
+    padding:12px 14px;
+    border-radius:4px;
+    margin-bottom:16px;
+    resize:vertical;
+    min-height:80px;
+  }
+  textarea:focus{outline:2px solid var(--brass-dim);border-color:var(--brass);}
+
+  input[type=text]#codeInputR, input[type=text]#codeOut{
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:2px;
+    text-align:center;
+  }
+
+  button.primary{
+    width:100%;
+    background:var(--brass);
+    color:var(--ink);
+    border:none;
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    font-size:0.95rem;
+    padding:13px;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  button.primary:disabled{background:var(--brass-dim);cursor:not-allowed;opacity:0.6;}
+  button.primary:hover:not(:disabled){filter:brightness(1.08);}
+
+  .status{font-size:0.88rem;margin-top:12px;min-height:20px;}
+  .status.error{color:var(--rust);}
+  .status.ok{color:var(--teal);}
+
+  .result{
+    display:none;
+    margin-top:22px;
+    border-top:1px solid var(--line);
+    padding-top:20px;
+  }
+  .field-block{margin-bottom:16px;}
+  .field-block label{margin-bottom:6px;}
+  .field-with-copy{display:flex;gap:8px;align-items:stretch;}
+  .field-with-copy input, .field-with-copy textarea{margin-bottom:0;flex:1;}
+  .field-with-copy button{
+    background:none;border:1px solid var(--line);color:var(--bone-dim);
+    font-family:'Inter',sans-serif;font-size:0.8rem;padding:0 14px;border-radius:4px;cursor:pointer;
+    white-space:nowrap;
+  }
+  .field-with-copy button:hover{color:var(--bone);border-color:var(--bone-dim);}
+  .note{font-size:0.85rem;color:var(--bone-dim);}
+
+  .video-embed{width:100%;aspect-ratio:16/9;border:none;border-radius:4px;margin-bottom:14px;background:#000;}
+  a.open-link{
+    display:block;text-align:center;
+    background:var(--teal);color:var(--bone);
+    padding:12px;border-radius:4px;text-decoration:none;
+    font-size:0.95rem;margin-bottom:6px;
+  }
+  a.open-link:hover{filter:brightness(1.1);}
+  .label-title{font-family:'Fraunces',serif;font-size:1.15rem;margin:0 0 10px 0;}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Coffre vidéo</h1>
+    <p class="sub">Protège le lien de ta vidéo derrière un code. Aucun serveur : tout est chiffré directement dans ton navigateur.</p>
+    <div class="howto">
+      <strong>Comment ça marche :</strong> ce fichier fonctionne seul, sans Claude ni connexion à un serveur. Envoie-le une fois à la personne (par mail, clé USB, etc. — elle peut le réutiliser pour toutes tes prochaines vidéos). Pour chaque vidéo, envoie-lui aussi le <strong>paquet</strong> et le <strong>code</strong>, séparément. Avec le paquet seul ou le code seul, impossible d'accéder à la vidéo.
+    </div>
+  </header>
+
+  <div class="dial-wrap">
+    <svg class="dial" viewBox="0 0 180 180">
+      <circle class="dial-face" cx="90" cy="90" r="78"></circle>
+      <g id="ticks"></g>
+      <line id="needle" class="dial-needle" x1="90" y1="90" x2="90" y2="24"></line>
+      <text id="dialText" class="dial-center-text" x="90" y="90"></text>
+    </svg>
+  </div>
+
+  <nav class="tabs">
+    <button id="tabDeposit" class="active" onclick="switchTab('deposit')">Déposer une vidéo</button>
+    <button id="tabRetrieve" onclick="switchTab('retrieve')">Récupérer une vidéo</button>
+  </nav>
+
+  <section id="panelDeposit" class="panel active">
+    <label>Lien de la vidéo</label>
+    <input type="url" id="urlInput" class="field" placeholder="https://drive.google.com/... ou https://youtu.be/...">
+    <label>Nom ou description (optionnel)</label>
+    <input type="text" id="labelInput" class="field" placeholder="Ex. : Soutenance WariCo — version finale">
+    <button class="primary" id="depositBtn" onclick="startDeposit()">Chiffrer et générer le code</button>
+    <div class="status" id="depositStatus"></div>
+
+    <div class="result" id="depositResult">
+      <div class="field-block">
+        <label>Code (à envoyer séparément, en secret)</label>
+        <div class="field-with-copy">
+          <input type="text" id="codeOut" class="field" readonly>
+          <button onclick="copyField('codeOut')">Copier</button>
+        </div>
+      </div>
+      <div class="field-block">
+        <label>Lien à envoyer</label>
+        <div class="field-with-copy">
+          <input type="text" id="linkOut" class="field" readonly>
+          <button onclick="copyField('linkOut')">Copier</button>
+        </div>
+      </div>
+      <div class="field-block">
+        <label>Paquet (solution de secours si le lien ne fonctionne pas)</label>
+        <div class="field-with-copy">
+          <textarea id="packageOut" readonly></textarea>
+          <button onclick="copyField('packageOut')">Copier</button>
+        </div>
+      </div>
+      <p class="note">Envoie le lien ci-dessus à la personne, puis donne-lui le code par un autre moyen (SMS, appel...). Le lien ne s'ouvrira correctement que si ce fichier est hébergé en ligne (ex. GitHub Pages) ou si la personne ouvre exactement ce même fichier depuis son appareil.</p>
+    </div>
+  </section>
+
+  <section id="panelRetrieve" class="panel">
+    <label>Paquet reçu</label>
+    <textarea id="packageInput" placeholder="Colle ici le paquet reçu"></textarea>
+    <label>Code reçu</label>
+    <input type="text" id="codeInputR" class="field" placeholder="Code">
+    <button class="primary" id="retrieveBtn" onclick="startRetrieve()">Déverrouiller</button>
+    <div class="status" id="retrieveStatus"></div>
+
+    <div class="result" id="retrieveResult">
+      <p class="label-title" id="videoLabel"></p>
+      <iframe id="videoEmbed" class="video-embed" style="display:none;" allowfullscreen></iframe>
+      <a id="openLink" class="open-link" target="_blank" rel="noopener">Ouvrir la vidéo</a>
+    </div>
+  </section>
+</div>
+
+<script>
+const CODE_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+(function(){
+  const g = document.getElementById('ticks');
+  const cx=90, cy=90, rOuter=78, rInnerMinor=68, rInnerMajor=62;
+  for(let i=0;i<40;i++){
+    const angle = (i/40)*2*Math.PI;
+    const major = i % 5 === 0;
+    const rIn = major ? rInnerMajor : rInnerMinor;
+    const x1 = cx + rOuter*Math.sin(angle);
+    const y1 = cy - rOuter*Math.cos(angle);
+    const x2 = cx + rIn*Math.sin(angle);
+    const y2 = cy - rIn*Math.cos(angle);
+    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1",x1); line.setAttribute("y1",y1);
+    line.setAttribute("x2",x2); line.setAttribute("y2",y2);
+    line.setAttribute("class","dial-tick" + (major ? " major" : ""));
+    g.appendChild(line);
+  }
+})();
+
+function checkIncomingLink(){
+  const hash = location.hash;
+  if(hash && hash.startsWith('#p=')){
+    const packageStr = decodeURIComponent(hash.slice(3));
+    document.getElementById('packageInput').value = packageStr;
+    switchTab('retrieve');
+    setStatus(document.getElementById('retrieveStatus'), "Lien détecté. Entre le code reçu pour déverrouiller.", "ok");
+    document.getElementById('codeInputR').focus();
+  }
+}
+window.addEventListener('DOMContentLoaded', checkIncomingLink);
+
+function switchTab(which){
+  document.getElementById('panelDeposit').classList.toggle('active', which==='deposit');
+  document.getElementById('panelRetrieve').classList.toggle('active', which==='retrieve');
+  document.getElementById('tabDeposit').classList.toggle('active', which==='deposit');
+  document.getElementById('tabRetrieve').classList.toggle('active', which==='retrieve');
+}
+
+function setStatus(el, msg, kind){
+  el.textContent = msg;
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+function spinNeedle(label){
+  const needle = document.getElementById('needle');
+  const finalAngle = 90 + Math.random()*720;
+  needle.style.transform = "rotate(" + finalAngle + "deg)";
+  setTimeout(()=>{ document.getElementById('dialText').textContent = label; }, 1100);
+}
+function resetNeedle(){
+  document.getElementById('needle').style.transform = "rotate(0deg)";
+  document.getElementById('dialText').textContent = "";
+}
+
+function randomCode(len){
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  let out = "";
+  for(let i=0;i<len;i++) out += CODE_CHARSET[bytes[i] % CODE_CHARSET.length];
+  return out;
+}
+
+function bufToBase64(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function base64ToBuf(b64){
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return arr.buffer;
+}
+
+async function deriveKey(passphrase, salt, usage){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw", enc.encode(passphrase), {name:"PBKDF2"}, false, ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2", salt: salt, iterations: 150000, hash:"SHA-256"},
+    keyMaterial,
+    {name:"AES-GCM", length:256},
+    false,
+    [usage]
+  );
+}
+
+async function startDeposit(){
+  const urlInput = document.getElementById('urlInput');
+  const labelInput = document.getElementById('labelInput');
+  const btn = document.getElementById('depositBtn');
+  const status = document.getElementById('depositStatus');
+  document.getElementById('depositResult').style.display = 'none';
+
+  const url = urlInput.value.trim();
+  const label = labelInput.value.trim();
+
+  if(!url){
+    setStatus(status, "Colle d'abord le lien de la vidéo.", "error");
+    return;
+  }
+  try{ new URL(url); }catch(e){
+    setStatus(status, "Ce lien n'a pas l'air valide.", "error");
+    return;
+  }
+
+  btn.disabled = true;
+  setStatus(status, "Chiffrement en cours…");
+
+  try{
+    const code = randomCode(8);
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(code, salt, "encrypt");
+
+    const enc = new TextEncoder();
+    const plaintext = enc.encode(JSON.stringify({url, label}));
+    const ciphertext = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, plaintext);
+
+    const packageObj = {
+      s: bufToBase64(salt),
+      i: bufToBase64(iv),
+      c: bufToBase64(ciphertext)
+    };
+    const packageStr = btoa(JSON.stringify(packageObj));
+
+    spinNeedle(code.slice(0,4));
+
+    const shareUrl = location.href.split('#')[0] + '#p=' + encodeURIComponent(packageStr);
+
+    document.getElementById('codeOut').value = code;
+    document.getElementById('packageOut').value = packageStr;
+    document.getElementById('linkOut').value = shareUrl;
+    setStatus(status, "Vidéo chiffrée avec succès.", "ok");
+    document.getElementById('depositResult').style.display = 'block';
+  }catch(err){
+    console.error(err);
+    setStatus(status, "Une erreur est survenue : " + err.message, "error");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function copyField(id){
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.value).catch(()=>{
+    el.select();
+    document.execCommand('copy');
+  });
+}
+
+function toEmbedUrl(url){
+  try{
+    const u = new URL(url);
+    if(u.hostname.includes("youtu.be")){
+      const id = u.pathname.slice(1);
+      return "https://www.youtube.com/embed/" + id;
+    }
+    if(u.hostname.includes("youtube.com")){
+      const id = u.searchParams.get("v");
+      if(id) return "https://www.youtube.com/embed/" + id;
+    }
+    if(u.hostname.includes("drive.google.com")){
+      return url.replace("/view", "/preview").replace(/\?.*$/, "");
+    }
+  }catch(e){}
+  return null;
+}
+
+async function startRetrieve(){
+  const packageInput = document.getElementById('packageInput');
+  const codeInput = document.getElementById('codeInputR');
+  const btn = document.getElementById('retrieveBtn');
+  const status = document.getElementById('retrieveStatus');
+  document.getElementById('retrieveResult').style.display = 'none';
+  resetNeedle();
+
+  const packageStr = packageInput.value.trim();
+  const code = codeInput.value.trim().toUpperCase();
+
+  if(!packageStr || !code){
+    setStatus(status, "Colle le paquet et entre le code.", "error");
+    return;
+  }
+
+  btn.disabled = true;
+  setStatus(status, "Déverrouillage…");
+
+  try{
+    let packageObj;
+    try{
+      packageObj = JSON.parse(atob(packageStr));
+    }catch(e){
+      throw new Error("Paquet illisible — vérifie qu'il a été copié en entier.");
+    }
+
+    const salt = base64ToBuf(packageObj.s);
+    const iv = base64ToBuf(packageObj.i);
+    const ciphertext = base64ToBuf(packageObj.c);
+
+    const key = await deriveKey(code, new Uint8Array(salt), "decrypt");
+
+    let plaintextBuf;
+    try{
+      plaintextBuf = await crypto.subtle.decrypt({name:"AES-GCM", iv: new Uint8Array(iv)}, key, ciphertext);
+    }catch(e){
+      throw new Error("Code invalide.");
+    }
+
+    const dec = new TextDecoder();
+    const record = JSON.parse(dec.decode(plaintextBuf));
+
+    spinNeedle("OK");
+
+    document.getElementById('videoLabel').textContent = record.label || "Vidéo";
+    const embed = toEmbedUrl(record.url);
+    const iframe = document.getElementById('videoEmbed');
+    const link = document.getElementById('openLink');
+    if(embed){
+      iframe.src = embed;
+      iframe.style.display = 'block';
+    }else{
+      iframe.style.display = 'none';
+    }
+    link.href = record.url;
+
+    setStatus(status, "Vidéo déverrouillée.", "ok");
+    document.getElementById('retrieveResult').style.display = 'block';
+  }catch(err){
+    console.error(err);
+    setStatus(status, err.message || "Une erreur est survenue.", "error");
+  }finally{
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
